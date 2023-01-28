@@ -75,7 +75,7 @@ module.exports = {
 		),
 
 	async execute(interaction) {
-		const db = new jsoning(`${interaction.guildId}.json`);
+		const db = new jsoning(`db/${interaction.guildId}.json`);
 		switch (interaction.options.getSubcommand()) {
 
 		case 'add': {
@@ -85,23 +85,33 @@ module.exports = {
 
 		case 'list': {
 			// TODO: Add a bunch of checks to make sure code does not break
-			const embeds = [];
-			for (const task of await db.get('tasks')) {
-				const embed = new EmbedBuilder()
-				// 01FF07 green B01B2E red
-					.setColor(0x01FF07)
-					.setTitle(task);
-				// :white_check_mark: :x:
-				for (const subtask of await db.get(task)) {
-					if (subtask.complete == ':x:') {
-						embed.setColor(0xB01B2E);
-					}
-					embed.addFields({ name: `${subtask.complete} ${subtask.subtask}`, value: '\u200B' });
-				}
-				embeds.push(embed);
+			if (await db.get('tasks')) {
+				const embeds = [];
+				for (const task of await db.get('tasks')) {
+					const embed = new EmbedBuilder()
+					// 01FF07 green B01B2E red
+						.setColor(0x01FF07)
+						.setTitle(task);
 
+					if (await db.get(task)) {
+						for (const subtask of await db.get(task)) {
+							if (subtask.complete == ':x:') {
+								embed.setColor(0xB01B2E);
+							}
+							embed.addFields({ name: `${subtask.complete} ${subtask.subtask}`, value: '\u200B' });
+						}
+					}
+					else {
+						embed.addFields({ name: 'No subtasks added yet', value: '\u200B' });
+					}
+					embeds.push(embed);
+
+				}
+				await interaction.reply({ embeds: embeds });
 			}
-			await interaction.reply({ embeds: embeds });
+			else {
+				await interaction.reply('No tasks! Please create a task with `/task add`');
+			}
 		} break;
 
 		case 'remove': {
@@ -154,5 +164,5 @@ module.exports = {
 };
 
 async function addTask(interaction) {
-	await interaction.reply(`This command was run by ${interaction.user.username}, This command is not implemented yet thanks :P}.`);
+	await interaction.reply(`Task \`${interaction.options.getString('name')}\` was added!`);
 }
