@@ -79,6 +79,7 @@ module.exports = {
 		switch (interaction.options.getSubcommand()) {
 
 		case 'add': {
+			// TODO: LIMIT AMOUNT OF TASKS PER SERVER at 10 SINCE 10 embeds IS MAX or make bot separate into multiple messages
 			await db.push('tasks', interaction.options.getString('name'));
 			addTask(interaction);
 		} break;
@@ -115,7 +116,8 @@ module.exports = {
 		} break;
 
 		case 'remove': {
-			if (await db.get('tasks').includes(interaction.options.getString('task'))) {
+			// TODO: remove all subtasks assiciated with that task
+			if (await db.get('tasks').includes(interaction.options.getString('task')) != null) {
 				await db.remove('tasks', interaction.options.getString('task'));
 				await interaction.reply(`Successfully removed ${interaction.options.getString('task')}`);
 			}
@@ -126,14 +128,56 @@ module.exports = {
 
 		// <task> <subtask>
 		case 'addsubtask': {
-			// TODO: check if subtask already exists
-			await db.push(interaction.options.getString('task'), { subtask: interaction.options.getString('subtask'), complete: ':x:' });
-			await interaction.reply('Added subtask sucessfully');
+			// TODO: LIMIT to 25 SUB tasks since 25 fields is max
+			const subtasks = await db.get(interaction.options.getString('task'));
+			const tasks = await db.get('tasks');
+			if (tasks.includes(interaction.options.getString('task'))) {
+				if (subtasks == null) {
+					await db.push(interaction.options.getString('task'), { subtask: interaction.options.getString('subtask'), complete: ':x:' });
+					await interaction.reply('Added subtask sucessfully');
+				}
+				else {
+					let found = false;
+					for (const subtask of subtasks) {
+						if (subtask.subtask == interaction.options.getString('subtask')) {
+							found = true;
+							await interaction.reply('Subtask already exists');
+						}
+					}
+					if (!found) {
+						await db.push(interaction.options.getString('task'), { subtask: interaction.options.getString('subtask'), complete: ':x:' });
+						await interaction.reply('Added subtask sucessfully');
+					}
+				}
+			}
+			else {
+				// TODO: maybe add the task if it does not exist not sure :P
+				await interaction.reply('Task does not exist, please create one!');
+			}
 		} break;
 
+		// <task> <subtask>
 		case 'removesubtask': {
-			// 					await db.set(subtasks.filter(function(subTask) { return subTask.subtask !=  }) );
-			await interaction.reply();
+			const subtasks = db.get(interaction.options.getString('task'));
+			const tasks = await db.get('tasks');
+			if (tasks.includes(interaction.options.getString('task'))) {
+				let found = false;
+				for (const subtask of subtasks) {
+					if (subtask.subtask == interaction.options.getString('subtask')) {
+						found = true;
+						// remove
+						await db.set(interaction.options.getString('task'), subtasks.filter(obj => obj.subtask != interaction.options.getString('subtask')));
+						await interaction.reply('removed subtask');
+					}
+				}
+				if (!found) {
+					await interaction.reply(`No subtask named ${interaction.options.getString('subtask')} to remove`);
+				}
+			}
+			else {
+				// TODO: maybe add the task if it does not exist not sure :P
+				await interaction.reply('Task does not exist, please create one!');
+			}
 		} break;
 
 		// <task> <subtask> <complete>
