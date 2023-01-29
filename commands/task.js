@@ -158,7 +158,7 @@ async function listTask(interaction, db) {
 		const embeds = [];
 		for (const task of await db.get('tasks')) {
 			const embed = new EmbedBuilder()
-			// 0x01FF07 green 0xB01B2E red
+				// 0x01FF07 green 0xB01B2E red
 				.setColor(0x01FF07)
 				.setTitle(task);
 
